@@ -2,6 +2,7 @@
 
 import urllib2
 import HTMLParser
+import re
 
 class MyParser(HTMLParser.HTMLParser):
 	foundWorkItem = False
@@ -15,19 +16,16 @@ class MyParser(HTMLParser.HTMLParser):
 
 
 	def handle_starttag(self, tag, attrs):
-		if tag == 'div':
-			if len(attrs) > 0 and attrs[0][1] == 'workItemSummary':
-				self.foundWorkItem = True
-		if self.foundWorkItem and tag == 'h2':
-			self.foundHTwo = True
+		if tag == "a" and len(attrs) > 0 and attrs[0][0] == "href":
+			href = attrs[0][1]
+			if re.match("(.)*/workitem/[0-9]+", href):
+				print href
 
 	def handle_data(self, data):
-		if self.foundHTwo == True:
-			print data
-			self.foundHTwo = False;
+		pass
 
-theUrl = "http://gpslogger.codeplex.com/workitem/list/basic?field=CreationDate&direction=Descending&issuesToDisplay=Open&keywords=&emailSubscribedItemsOnly=false"
-print theUrl
+theUrl = "http://gpslogger.codeplex.com/workitem/list/basic?size=2147483647"
+print "Querying", theUrl
 MyParser(theUrl)
 			
 
