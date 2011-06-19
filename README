@@ -1,6 +1,0 @@
-This script, when complete, will hopefully do the following:
-
-1 - Parse the HTML on the Issues page of a given codeplex project (follow paging links too)
-2 - Grab the relevant issue info
-3 - Call the github.com API and create issues for each of the codeplex ones
-4 - Teach me some Python
