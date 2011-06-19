@@ -19,3 +19,10 @@
 
 
 5 - Run the script.
+
+
+## Notes
+
+* This script will close an imported issue if it is closed on Codeplex
+* You can see a test import [here](https://github.com/mendhak/Codeplex-Issues-Importer/issues?sort=created&direction=desc&state=closed&page=1). 
+* Apologies if I'm not following a proper code style, this is my first Python script 
