@@ -17,7 +17,14 @@ if GITHUB_APITOKEN == "":
 import urllib2
 import HTMLParser
 import re
-from github2.client import Github
+
+try:
+	from github2.client import Github
+except ImportError, e:
+	print "You haven't installed the github2 package"
+	exit()
+
+
 
 
 def getTupleValue(lst, key):
