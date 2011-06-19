@@ -228,3 +228,4 @@ for wi in parsedWorkItems:
 		gh.issues.close(GITHUB_USERNAME + "/" + GITHUB_PROJECT, newIssue.number)
 	print "Created Github issue", newIssue.number, "for", "[" + wi.heading + "]"
 	
+print "End of script"
