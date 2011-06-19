@@ -57,6 +57,7 @@ class CodePlexWorkItem():
 	
 	def SetSubmittedBy(self, s):
 		self.submittedby =  s
+        self.description = "<b>" + s + "[CodePlex]</b><br />" + self.description
 
 	def AddComment(self, c):
 		self.comments.insert(0,c)
