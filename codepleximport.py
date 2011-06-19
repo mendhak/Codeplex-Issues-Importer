@@ -57,7 +57,7 @@ class CodePlexWorkItem():
 	
 	def SetSubmittedBy(self, s):
 		self.submittedby =  s
-        self.description = "<b>" + s + "[CodePlex]</b><br />" + self.description
+	        self.description = "<b>" + s + "[CodePlex]</b><br />" + self.description
 
 	def AddComment(self, c):
 		self.comments.insert(0,c)
@@ -174,10 +174,14 @@ class WorkItemParser(HTMLParser.HTMLParser):
 			
 
 	def handle_charref(self, name):
+        #Don't unescape entities 60 and 62
 		if self.descriptionFound:
 			self.currentWorkItem.AppendDescription("&#" + name + ";")
 		if self.commentFound:
-			self.comment = self.comment + self.unescape("&#" + name + ";")
+			if name == "60" or name == "62":
+		                self.comment = self.comment + "&#" + name + ";"
+			else:
+				self.comment = self.comment + self.unescape("&#" + name + ";")
 		if self.titleFound:
 			self.currentWorkItem.AppendHeading(self.unescape("&#" + name + ";"))
 			
