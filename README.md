@@ -2,23 +2,27 @@
 
 ## Instructions
 
-1 - Download the [github2 Python library](http://packages.python.org/github2/).
+1 - Install [github3 Python library](https://github.com/sigmavirus24/github3.py) using either 
+    
+    easy_install github3.py 
 
-2 - Install the [github2 Python library](http://packages.python.org/github2/install.html).
+or
 
-3 - Download the codepleximport.py script
+    pip install github3.py
 
-4 - Open it in a text editor and modify the values at the top
+2 - Download the codepleximport.py script
 
-
-* CODEPLEX\_PROJECT - the subdomain of the project on codeplex _(yourproject.codeplex.com)_
-* GITHUB\_PROJECT - the name of the repository on github _(Codeplex-Issues-Importer)_
-* GITHUB\_USERNAME - your github username _(mendhak)_
-* GITHUB\_ISSUELABEL - a tag that will be applied to all issues imported _(CodePlex)_
-* GITHUB\_APITOKEN - your API Token which you can get from your [account admin page](https://github.com/account/admin)
+3 - Open it in a text editor and modify the values at the top
 
 
-5 - Run the script.
+    CODEPLEX\_PROJECT - the subdomain of the project on codeplex _(yourproject.codeplex.com)_
+    GITHUB\_PROJECT - the name of the repository on github _(Codeplex-Issues-Importer)_
+    GITHUB\_USERNAME - your github username _(mendhak)_
+    GITHUB\_ISSUELABEL - a tag that will be applied to all issues imported _(CodePlex)_
+    GITHUB\_PASSWORD - your github password
+
+
+4 - Run the script.
 
 
 ## Notes
