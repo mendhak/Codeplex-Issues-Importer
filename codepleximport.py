@@ -1,27 +1,39 @@
 #! /usr/bin/python
 
+import sys
 
-#Download the github2 package from http://packages.python.org/github2/
+# Set to true to force script to run in UTF8
+forceUTF8 = False
+
+
+if forceUTF8:
+  # Set default encoding to 'UTF-8' instead of 'ascii'
+  # http://stackoverflow.com/questions/11741574/how-to-set-the-default-encoding-to-utf-8-in-python
+  # Bad things might happen though
+  reload(sys)
+  sys.setdefaultencoding("UTF8")
+
+
+# Used github3.py - https://github.com/sigmavirus24/github3.py
+# install using easy_install github3.py 
+#            or pip install github3.py
 
 #User specific values
+
 CODEPLEX_PROJECT = "gpslogger.codeplex.com"
 GITHUB_PROJECT = "Codeplex-Issues-Importer" 
 GITHUB_USERNAME = "mendhak"
+GITHUB_PASSWORD = ""
 GITHUB_ISSUELABEL = "CodePlex"
-GITHUB_APITOKEN = ""
-
-if GITHUB_APITOKEN == "":
-	raise Exception("You haven't supplied an API Token in this file")
-
 
 import urllib2
 import HTMLParser
 import re
 
 try:
-	from github2.client import Github
+  from github3 import login
 except ImportError, e:
-	print "You haven't installed the github2 package"
+	print "You haven't installed the github3 package"
 	exit()
 
 
@@ -57,7 +69,7 @@ class CodePlexWorkItem():
 	
 	def SetSubmittedBy(self, s):
 		self.submittedby =  s
-	        self.description = "<b>" + s + "[CodePlex]</b><br />" + self.description
+	        self.description = "<b>" + s + "[CodePlex]</b> <br />" + self.description
 
 	def AddComment(self, c):
 		self.comments.insert(0,c)
@@ -95,6 +107,7 @@ class WorkItemParser(HTMLParser.HTMLParser):
 	descriptionFound = False
 
 	commentByFound = False
+	commentAreaFound = False
 	commentFound = False
 	comment = ""
 	
@@ -113,18 +126,26 @@ class WorkItemParser(HTMLParser.HTMLParser):
 
 	def handle_starttag(self, tag, attrs):
 
-		if tag == "span" and len(attrs) > 0: 
-			spanId = getTupleValue(attrs, "id")
-			if spanId == "TitleLabel":
+		if tag == "h1" and len(attrs) > 0: 
+			h1Id = getTupleValue(attrs, "id")
+			if h1Id == "workItemTitle":
 				self.titleFound = True
+				
+		if tag == "p" and len(attrs) > 0: 
+			pId = getTupleValue(attrs, "id")
+			if pId != None and "VotedLabel" in pId:
+				self.itemStatusFound = True
+				
 		if tag == "div" and len(attrs) > 0:
 			divId = getTupleValue(attrs, "id")
-			if divId == "DescriptionPanel":
+			divClass = getTupleValue(attrs, "class")
+			#print "   DivId: %s,  DivClass:%s" %(divId, divClass)
+			if divId == "descriptionContent":
 				self.descriptionFound = True
-			elif divId != None and "MessageLabel" in divId:
+			elif divId != None and "CommentContainer" in divId:
+				self.commentAreaFound = True
+			elif self.commentAreaFound and divClass!= None and "markDownOutput" in divClass:
 				self.commentFound = True
-			elif divId != None and "VotedLabel" in divId:
-				self.itemStatusFound = True
 
 		if tag == "a" and len(attrs) > 0:
 			aId = getTupleValue(attrs, "id")
@@ -137,21 +158,30 @@ class WorkItemParser(HTMLParser.HTMLParser):
 	def handle_data(self, data):
 		if self.titleFound:
 			self.currentWorkItem.AppendHeading(data)
+			print "Title: %s" % (data)
 		if self.descriptionFound:
 			self.currentWorkItem.AppendDescription(data)
+			print "Description: %s" % (data)
 		if self.commentByFound:
-			self.comment = self.comment + "<b>" + data + "[CodePlex]</b>"
+			self.comment = "<b>" + data + "[CodePlex]</b> <br />" + self.comment
+			print "CommentBy: %s" % (data)
 		if self.commentFound:
 			self.comment = self.comment + data
+			print "Comment: %s" % (data)
 		if self.submittedByFound:
 			self.currentWorkItem.SetSubmittedBy(data)
+			print "SubmittedBy: %s" % (data)
 		if self.itemStatusFound:
-			if data == "closed":
+			if data == "Closed":
 				self.currentWorkItem.SetIsClosed(True)
+				
+			print "CLOSED: %s" % (True)
 			
 
 	def handle_endtag(self, tag):
-		if self.titleFound and tag == "span":
+		if self.itemStatusFound and tag == "p":
+			self.itemStatusFound = False		
+		if self.titleFound and tag == "h1":
 			self.titleFound = False
 		if self.descriptionFound and tag == "div":
 			self.descriptionFound = False
@@ -159,6 +189,7 @@ class WorkItemParser(HTMLParser.HTMLParser):
 			self.commentByFound = False
 		if self.commentFound and tag == "div":
 			self.commentFound = False
+			self.commentAreaFound = False
 			self.currentWorkItem.AddComment(self.comment)
 			self.comment = ''
 		if self.submittedByFound:
@@ -167,8 +198,8 @@ class WorkItemParser(HTMLParser.HTMLParser):
 	def handle_entityref(self, name):
 		if self.descriptionFound:
 			self.currentWorkItem.AppendDescription(name)
-		if self.commentFound:
-			self.comment = self.comment + data
+		#if self.commentFound:
+			#self.comment = self.comment + data
 		if self.titleFound:
 			self.currentWorkItem.AppendHeading(name)
 			
@@ -208,7 +239,7 @@ while continuePaging:
 	print "Parsing page ", pageNumber, "(", issuePageUrl, ")"
 
 	ilp = IssuesListParser(issuePageUrl)
-
+  
 	if len(ilp.itemLinks) == totalLinks:
 		continuePaging = False
 		print "Reached end of issue pages"
@@ -216,12 +247,14 @@ while continuePaging:
 		totalLinks = len(ilp.itemLinks)
 		continuePaging = True
 
-print len(ilp.itemLinks), " work item links found"
+#print len(ilp.itemLinks), " work item links found"
 
 parsedWorkItems = []
 
+
 #Loop through, process each work item link
 for itemUrl in ilp.itemLinks:
+	print "\n\nParsing %s" % (itemUrl)
 	wiParser = WorkItemParser(itemUrl)
 	print wiParser.currentWorkItem.heading
 	parsedWorkItems.append(wiParser.currentWorkItem)
@@ -229,15 +262,19 @@ for itemUrl in ilp.itemLinks:
 print len(parsedWorkItems), " work items parsed from CodePlex"
 
 #initialize github
-gh = Github(username=GITHUB_USERNAME, api_token=GITHUB_APITOKEN,requests_per_second=0.5)
+gh = login(GITHUB_USERNAME, password=GITHUB_PASSWORD)
 
 for wi in parsedWorkItems:
-	newIssue = gh.issues.open(GITHUB_USERNAME + "/" + GITHUB_PROJECT, title=wi.heading, body=wi.description)
-	gh.issues.add_label(GITHUB_USERNAME + "/" + GITHUB_PROJECT, newIssue.number, GITHUB_ISSUELABEL)
+	print "gh.create_issue(%s,%s,%s,%s,labels=[%s])" % (GITHUB_USERNAME,GITHUB_PROJECT,wi.heading,wi.description,GITHUB_ISSUELABEL)
+	newIssue = gh.create_issue(GITHUB_USERNAME,GITHUB_PROJECT,wi.heading,wi.description,labels=[GITHUB_ISSUELABEL])
+	if not newIssue:
+		print "Unable to create issue"
+		continue
+		
 	for c in wi.comments:
-		gh.issues.comment(GITHUB_USERNAME + "/" + GITHUB_PROJECT, newIssue.number, c)
+		newIssue.create_comment(c)
 	if wi.isClosed:
-		gh.issues.close(GITHUB_USERNAME + "/" + GITHUB_PROJECT, newIssue.number)
+		newIssue.close()
 	print "Created Github issue", newIssue.number, "for", "[" + wi.heading + "]"
 	
 print "End of script"
