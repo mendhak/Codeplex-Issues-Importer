@@ -1,4 +1,5 @@
 #! /usr/bin/python
+# Python 2.x
 
 import sys
 
@@ -28,7 +29,7 @@ GITHUB_ISSUELABEL = "CodePlex"
 
 import urllib2
 import HTMLParser
-import re
+import re, time
 
 try:
   from github3 import login
@@ -69,7 +70,7 @@ class CodePlexWorkItem():
 	
 	def SetSubmittedBy(self, s):
 		self.submittedby =  s
-	        self.description = "<b>" + s + "[CodePlex]</b> <br />" + self.description
+		self.description = "<b>" + s + "[CodePlex]</b> <br />" + self.description
 
 	def AddComment(self, c):
 		self.comments.insert(0,c)
@@ -205,12 +206,12 @@ class WorkItemParser(HTMLParser.HTMLParser):
 			
 
 	def handle_charref(self, name):
-        #Don't unescape entities 60 and 62
+		#Don't unescape entities 60 and 62
 		if self.descriptionFound:
 			self.currentWorkItem.AppendDescription("&#" + name + ";")
 		if self.commentFound:
 			if name == "60" or name == "62":
-		                self.comment = self.comment + "&#" + name + ";"
+				self.comment = self.comment + "&#" + name + ";"
 			else:
 				self.comment = self.comment + self.unescape("&#" + name + ";")
 		if self.titleFound:
@@ -239,7 +240,7 @@ while continuePaging:
 	print "Parsing page ", pageNumber, "(", issuePageUrl, ")"
 
 	ilp = IssuesListParser(issuePageUrl)
-  
+
 	if len(ilp.itemLinks) == totalLinks:
 		continuePaging = False
 		print "Reached end of issue pages"
@@ -270,11 +271,18 @@ for wi in parsedWorkItems:
 	if not newIssue:
 		print "Unable to create issue"
 		continue
-		
+
+	# Github has added an 'abuse prevention' feature which will interrupt this process
+	# unless waits are used. Github 'best practice' recommends at least one second
+	# between activities; I'm being paranoid and using two second delays.
+	time.sleep(2)
 	for c in wi.comments:
 		newIssue.create_comment(c)
+		time.sleep(2)
+
 	if wi.isClosed:
 		newIssue.close()
 	print "Created Github issue", newIssue.number, "for", "[" + wi.heading + "]"
-	
+	time.sleep(3)
+
 print "End of script"

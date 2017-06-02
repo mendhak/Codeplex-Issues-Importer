@@ -1,5 +1,7 @@
 # Codeplex to Github Issues Importer
 
+A Python 2.x script.
+
 ## Instructions
 
 1 - Install [github3 Python library](https://github.com/sigmavirus24/github3.py) using either 
